@@ -1,9 +1,6 @@
-# Mantis MCP Server (Remote / Online version)
+# Mantis MCP Server (Vercel — بدون كارت)
 
-نسخة أونلاين من سيرفر الـ MCP بتاع Mantis، تشتغل من claude.ai على الموبايل أو أي متصفح، مش بس من جهازك.
-
-## الفكرة
-السيرفر ده بيشتغل كموقع صغير على الإنترنت، وكلود بيكلمه عن طريق رابط (URL). عشان محدش تاني يقدر يستخدمه غيرك، السيرفر بيطلب مفتاح سري (`AUTH_TOKEN`) تحطه في آخر الرابط.
+نسخة أونلاين مجانية من غير أي متطلب كارت، تشتغل من claude.ai على الموبايل أو أي متصفح.
 
 ## البيانات اللي هتحتاجها
 
@@ -11,54 +8,54 @@
 |---|---|
 | `MANTIS_URL` | `https://mantis.bee-technology.com` |
 | `MANTIS_TOKEN` | التوكن اللي عملته من Mantis (My Account > API Tokens) |
-| `AUTH_TOKEN` | `de7bddbad24a2012d1978bc4d60a23ced1fcf9ee13b67293` (مفتاح سري اتولّد لك، احتفظ بيه) |
+| `AUTH_TOKEN` | `de7bddbad24a2012d1978bc4d60a23ced1fcf9ee13b67293` (مفتاح سري، احتفظ بيه) |
 
-## خطوات النشر (Render.com – مجاني)
+## خطوات النشر
 
-### 1) ارفع الملفات دي على GitHub
-1. اعمل حساب مجاني على github.com لو مالكش واحد
-2. اضغط **New repository** (زرار أخضر)، سمّيه `mantis-mcp-remote`، خليه Private، واضغط Create
+### 1) ارفع الملفات على GitHub
+1. لو عندك ريبو `mantis-mcp-remote` من قبل، اعمل واحد جديد بدل ما تلخبط فيه، سمّيه `mantis-mcp-vercel`
+2. اضغط **New repository** على github.com، خليه Private، واضغط Create
 3. جوه الريبو الفاضي، دوس **uploading an existing file**
-4. اسحب (drag & drop) الملفات التلاتة: `server.mjs`, `package.json`, `.gitignore`
+4. ارفع الملفات دي بنفس الترتيب:
+   - `api/mcp.js` (لازم يفضل جوه فولدر اسمه `api` بالظبط)
+   - `package.json`
+   - `.gitignore`
 5. اضغط **Commit changes**
 
-### 2) اعمل حساب على Render
-1. روح على render.com واعمل حساب (تقدر تسجل بحساب الـ GitHub بتاعك مباشرة)
-2. اضغط **New +** → **Web Service**
-3. اختار **Build and deploy from a Git repository** واربط حساب GitHub بتاعك، واختار الريبو `mantis-mcp-remote`
-4. Runtime: Node
-5. Build Command: `npm install`
-6. Start Command: `node server.mjs`
-7. Instance Type: Free
+> ملحوظة: لو GitHub مسمحش لك تعمل الفولدر `api` مباشرة أثناء الرفع، اكتب اسم الملف كده في خانة اسم الملف وقت الرفع: `api/mcp.js` — هو هيعمل الفولدر لوحده.
 
-### 3) ضيف المتغيرات (Environment Variables)
-تحت في نفس صفحة الإعداد، هتلاقي قسم **Environment Variables**، ضيف التلاتة دول:
-- `MANTIS_URL` = `https://mantis.bee-technology.com`
-- `MANTIS_TOKEN` = (التوكن بتاعك من Mantis)
-- `AUTH_TOKEN` = `de7bddbad24a2012d1978bc4d60a23ced1fcf9ee13b67293`
+### 2) اعمل حساب على Vercel
+1. روح على vercel.com واضغط **Sign Up**
+2. اختار **Continue with GitHub** (سجل بنفس حساب الـ GitHub) — مفيش كارت مطلوب خالص
+3. من الداشبورد اضغط **Add New** → **Project**
+4. اختار الريبو `mantis-mcp-vercel` واضغط **Import**
+5. سيب باقي الإعدادات زي ما هي واضغط **Deploy**
 
-اضغط **Create Web Service** وانتظر شوية لحد ما يخلص Deploy (هتشوف "Live" باللون الأخضر).
+### 3) ضيف المتغيرات السرية
+1. بعد ما يخلص الـ Deploy، روح لصفحة المشروع → **Settings** → **Environment Variables**
+2. ضيف التلاتة:
+   - `MANTIS_URL` = `https://mantis.bee-technology.com`
+   - `MANTIS_TOKEN` = (توكن مانتس بتاعك)
+   - `AUTH_TOKEN` = `de7bddbad24a2012d1978bc4d60a23ced1fcf9ee13b67293`
+3. بعد الحفظ، روح لتبويب **Deployments** ودوس على أحدث Deployment → زرار **⋯** → **Redeploy** (عشان المتغيرات الجديدة تتفعّل)
 
 ### 4) هتاخد رابط زي كده
 ```
-https://mantis-mcp-remote.onrender.com
+https://mantis-mcp-vercel.vercel.app
 ```
+
+## تجربة سريعة إن السيرفر شغال
+افتح الرابط ده في المتصفح (غيّر الاسم والمفتاح حسب بتاعك):
+```
+https://mantis-mcp-vercel.vercel.app/api/mcp?key=de7bddbad24a2012d1978bc4d60a23ced1fcf9ee13b67293
+```
+لو ظهرت رسالة JSON فيها خطأ عن "Method Not Allowed" أو حاجة شبه كده (مش 401 unauthorized)، يبقى المفتاح شغال والسيرفر تمام — الصفحة دي أصلاً مش مفروض تتفتح من المتصفح العادي، بس ظهور رسالة بدل صفحة بيضا فاضية أو 404 معناه إنه شغال.
 
 ## ضيفه في Claude
 1. من claude.ai (موبايل أو ويب) → **Settings** → **Connectors**
 2. اضغط **Add custom connector**
 3. في خانة الرابط اكتب:
 ```
-https://اسم-السيرفر-بتاعك.onrender.com/mcp?key=de7bddbad24a2012d1978bc4d60a23ced1fcf9ee13b67293
+https://اسم-مشروعك.vercel.app/api/mcp?key=de7bddbad24a2012d1978bc4d60a23ced1fcf9ee13b67293
 ```
 4. احفظ، وفعّل الأدوات في أي محادثة من زرار الأدوات (المطرقة/plug)
-
-## ملاحظة عن الخطة المجانية في Render
-الخطة المجانية بتـ"تنام" بعد فترة من غير استخدام، وأول طلب بعد النوم بياخد شوية ثواني عشان يصحى. ده عادي ومش عيب.
-
-## تجربة سريعة إن السيرفر شغال
-افتح الرابط ده في المتصفح:
-```
-https://اسم-السيرفر-بتاعك.onrender.com/
-```
-المفروض تشوف: `Mantis MCP server is running.`
