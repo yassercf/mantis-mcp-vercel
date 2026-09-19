@@ -126,6 +126,43 @@ const TOOLS = [
       required: ["id", "text"],
     },
   },
+  {
+    name: "update_issue",
+    description:
+      "Edit an existing ticket. Only send the fields you want to change; everything else stays as it is.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "Issue id to update" },
+        summary: { type: "string", description: "New title. Optional." },
+        description: { type: "string", description: "New full description. Optional." },
+        additional_information: { type: "string", description: "New extra notes/info. Optional." },
+        steps_to_reproduce: { type: "string", description: "New steps to reproduce. Optional." },
+        category: { type: "string", description: "New category name. Optional." },
+        priority: { type: "string", description: "none, low, normal, high, urgent, immediate. Optional." },
+        severity: { type: "string", description: "feature, trivial, text, tweak, minor, major, crash, block. Optional." },
+        reproducibility: { type: "string", description: "always, sometimes, random, have not tried, unable to reproduce, N/A. Optional." },
+        status: { type: "string", description: "e.g. new, feedback, acknowledged, confirmed, assigned, resolved, closed. Optional." },
+        resolution: { type: "string", description: "e.g. open, fixed, reopened, unable to reproduce, not fixable, duplicate, won't fix. Optional." },
+        handler: { type: "string", description: "Username to (re)assign the ticket to. Optional." },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "add_attachment",
+    description:
+      "Attach a file (e.g. an error screenshot) to an existing ticket. Provide the raw file bytes as base64.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "Issue id to attach the file to" },
+        filename: { type: "string", description: "File name, e.g. error.png" },
+        content_base64: { type: "string", description: "The file's contents encoded as base64 (no data: prefix)." },
+      },
+      required: ["id", "filename", "content_base64"],
+    },
+  },
 ];
 
 async function handleToolCall(name, args) {
@@ -173,6 +210,33 @@ async function handleToolCall(name, args) {
     case "add_note": {
       await mantisFetch(`/issues/${args.id}/notes`, { method: "POST", body: JSON.stringify({ text: args.text }) });
       return `Note added to issue #${args.id}.`;
+    }
+    case "update_issue": {
+      const payload = {};
+      if (args.summary) payload.summary = args.summary;
+      if (args.description) payload.description = args.description;
+      if (args.additional_information) payload.additional_information = args.additional_information;
+      if (args.steps_to_reproduce) payload.steps_to_reproduce = args.steps_to_reproduce;
+      if (args.category) payload.category = { name: args.category };
+      if (args.priority) payload.priority = { name: args.priority };
+      if (args.severity) payload.severity = { name: args.severity };
+      if (args.reproducibility) payload.reproducibility = { name: args.reproducibility };
+      if (args.status) payload.status = { name: args.status };
+      if (args.resolution) payload.resolution = { name: args.resolution };
+      if (args.handler) payload.handler = { name: args.handler };
+      if (Object.keys(payload).length === 0) {
+        throw new Error("No fields to update were provided.");
+      }
+      const data = await mantisFetch(`/issues/${args.id}`, { method: "PATCH", body: JSON.stringify(payload) });
+      const updated = data.issue;
+      return `Updated issue #${updated?.id ?? args.id}${updated?.summary ? `: ${updated.summary}` : ""}.`;
+    }
+    case "add_attachment": {
+      const payload = {
+        files: [{ name: args.filename, content: args.content_base64 }],
+      };
+      await mantisFetch(`/issues/${args.id}/files`, { method: "POST", body: JSON.stringify(payload) });
+      return `Attached "${args.filename}" to issue #${args.id}.`;
     }
     default:
       throw new Error(`Unknown tool: ${name}`);
