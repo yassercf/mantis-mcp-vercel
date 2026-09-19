@@ -1,17 +1,12 @@
-#!/usr/bin/env node
 /**
- * Remote (HTTP) MCP server that bridges Claude with a MantisBT ticket system.
- * Deployed online so it can be used from claude.ai on mobile or desktop browser.
+ * Vercel Serverless Function: /api/mcp
+ * Bridges Claude with a MantisBT ticket system, hosted for free on Vercel.
  *
- * Required environment variables (set them on your hosting provider, not in code):
+ * Required Environment Variables (set in Vercel project settings):
  *   MANTIS_URL   - e.g. https://mantis.bee-technology.com
  *   MANTIS_TOKEN - MantisBT personal API token (My Account -> API Tokens)
- *   AUTH_TOKEN   - a secret string YOU make up, used to keep strangers from
- *                  calling your public URL. Put it in the connector URL as
- *                  ?key=YOUR_SECRET when you add this to Claude.
- *   PORT         - usually set automatically by the hosting provider.
+ *   AUTH_TOKEN   - a secret string YOU make up, put in the connector URL as ?key=...
  */
-import express from "express";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
@@ -22,14 +17,6 @@ import {
 const MANTIS_URL = (process.env.MANTIS_URL || "").replace(/\/+$/, "");
 const MANTIS_TOKEN = process.env.MANTIS_TOKEN || "";
 const AUTH_TOKEN = process.env.AUTH_TOKEN || "";
-const PORT = process.env.PORT || 3000;
-
-if (!MANTIS_URL || !MANTIS_TOKEN) {
-  console.error("[mantis-mcp] Missing MANTIS_URL or MANTIS_TOKEN environment variables.");
-}
-if (!AUTH_TOKEN) {
-  console.error("[mantis-mcp] WARNING: no AUTH_TOKEN set — your server would be open to anyone who finds the URL.");
-}
 
 async function mantisFetch(path, options = {}) {
   const url = `${MANTIS_URL}/api/rest${path}`;
@@ -207,18 +194,28 @@ function buildServer() {
   return server;
 }
 
-const app = express();
-app.use(express.json());
+// Vercel needs the raw body; tell it not to pre-parse JSON so the MCP
+// transport can read the request stream itself.
+export const config = { api: { bodyParser: false } };
 
-app.all("/mcp", async (req, res) => {
+async function readJsonBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString("utf8");
+  return raw ? JSON.parse(raw) : undefined;
+}
+
+export default async function handler(req, res) {
   if (AUTH_TOKEN) {
-    const provided = req.query.key || req.headers["x-auth-token"];
+    const url = new URL(req.url, "http://localhost");
+    const provided = url.searchParams.get("key") || req.headers["x-auth-token"];
     if (provided !== AUTH_TOKEN) {
       res.status(401).json({ error: "unauthorized" });
       return;
     }
   }
   try {
+    const body = req.method === "POST" ? await readJsonBody(req) : undefined;
     const server = buildServer();
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     res.on("close", () => {
@@ -226,15 +223,9 @@ app.all("/mcp", async (req, res) => {
       server.close();
     });
     await server.connect(transport);
-    await transport.handleRequest(req, res, req.body);
+    await transport.handleRequest(req, res, body);
   } catch (err) {
     console.error(err);
     if (!res.headersSent) res.status(500).json({ error: String(err) });
   }
-});
-
-app.get("/", (req, res) => res.send("Mantis MCP server is running."));
-
-app.listen(PORT, () => {
-  console.log(`[mantis-mcp] listening on port ${PORT}`);
-});
+}
