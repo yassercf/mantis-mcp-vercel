@@ -1,18 +1,9 @@
 {
-  "name": "mantis-mcp-remote",
+  "name": "mantis-mcp-vercel",
   "version": "1.0.0",
-  "description": "Remote MCP server bridging Claude with a MantisBT ticket system",
+  "description": "Mantis MCP endpoint hosted on Vercel",
   "type": "module",
-  "main": "server.mjs",
-  "engines": { "node": ">=18" },
-  "scripts": {
-    "start": "node server.mjs"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "express": "^5.2.1"
+    "@modelcontextprotocol/sdk": "^1.30.0"
   }
 }
